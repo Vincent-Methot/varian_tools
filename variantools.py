@@ -29,7 +29,7 @@ def loadfid(path_to_fid):
     """
     Take a fid file coming from a Varian NMR imager. Returns a 3D numpy 
     array (1: block number, 2: trace number, 3: element number). All
-    informations necessary for reconstruction are inside de 'procpar'
+    necessary informations for reconstruction are inside de 'procpar'
     file (usually in the same directory as the 'fid' file.
     
     
@@ -52,15 +52,15 @@ def loadfid(path_to_fid):
     # information about data structure
     header = unpack('>6l2hl',packedData[:bytesInHeader])
     # Some of them are useless
-    nblocks = header[0]		# number of blocks in file
-    ntraces = header[1]		# number of traces per block
-    nelements = header[2] 	# number of elements per trace
-    ebytes = header[3]		# number of bytes per element
-    tbytes = header[4]		# number of bytes per trace
-    bbytes = header[5]		# number of bytes per block
-    vers_id = header[6]		# software version, file_id status bits
-    status = header[7]		# status of whole file
-    nbheaders = header[8]	# number of block header per block
+    nblocks = header[0]     # number of blocks in file
+    ntraces = header[1]     # number of traces per block
+    nelements = header[2]   # number of elements per trace
+    ebytes = header[3]      # number of bytes per element
+    tbytes = header[4]      # number of bytes per trace
+    bbytes = header[5]      # number of bytes per block
+    vers_id = header[6]     # software version, file_id status bits
+    status = header[7]      # status of whole file
+    nbheaders = header[8]   # number of block header per block
 
     print 'Number of blocks =', nblocks
     print 'Number of traces per block =', ntraces
@@ -270,26 +270,22 @@ def loadfdf(path_to_img):
 
     return image
 
-def niftiheader(data, procpar):
+
+def niftiheader(name, data, par):
     """
     Make a nifti header for Varian image coming from the scanner
     """
     
-    print 'Dimensions:', niftiData.shape
+    print 'Dimensions:', data.shape
 
-    # Creating header and writing Nifti1 file.
-
+    
     affine = np.eye(4)
+    dx = par['lpe'] * 10 / par['nv']
+    dy = par['lro'] * 20 / par['np']
+    dz = par['thk']
     affine[np.eye(4) == 1] = [dx, dy, dz, 1]
-    # niftiHeader = nib.Nifti1Header()
-    # niftiHeader.set_sform(affine, code='scanner')
-    # niftiHeader.set_dim_info(phase = 0, freq = 1, slice = 2)
-    nifti = nib.Nifti1Image(niftiData, affine)
-
-    # sur ipython:
-    # for i in range(10): subplot(2,5,i); imshow(nifti[...,i,0],aspect=matrix[0]/float(matrix[1]),cmap=cm.gray)
-
-    nib.save(nifti,sortie)
+    nifti = nib.Nifti1Image(data, affine)
+    nib.save(nifti, name)
 
 
 def keyhole(data, par):
