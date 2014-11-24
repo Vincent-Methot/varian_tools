@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# Script to reconstruct keyhole data from a fid + procpar files
+
+
 print ''
 print '#########################################'
 print 'Importing libraries'
@@ -18,7 +21,7 @@ import sys
 import os
 from variantools import *
 
-path = '/home/vincent/Maitrise/Data/metv_20141112_002/data/gems_ep04_06.fid'
+path = sys.argv[1]
 
 print ''
 print '#########################################'
@@ -36,7 +39,7 @@ print '#########################################'
 print ''
 
 # Get phase encode table from the scan parameters
-petable = read_petable(par['petable'])
+petable = read_petable(sys.argv[0][:-10] + '/' + par['petable'])
 # Count number of zero in petable to know number of frame per acquisition
 frames_per_acq = np.sum(petable == 0)
 time_frames = frames_per_acq * data.shape[0]
@@ -129,24 +132,24 @@ image_tmp = image_tmp.transpose([2,3,1,0])
 
 # Image x(phase), y(frequency), z(slice), t(time)
 
+# print ''
+# print '#########################################'
+# print 'Reorder slices'
+# print '#########################################'
+# print ''
+# 
+# image = np.empty(image_tmp.shape)
+# interleave_order = range(ns)
+# interleave_order = interleave_order[::2] + interleave_order[1::2]
+# for z in range(ns):
+    # image[:,:,interleave_order[z], :] = image_tmp[:,::-1, z, :]
+# 
+image = image_tmp
+
+
 print ''
 print '#########################################'
-print 'Reorder slices'
-print '#########################################'
-print ''
-
-image = np.empty(image_tmp.shape)
-interleave_order = range(ns)
-interleave_order = interleave_order[::2] + interleave_order[1::2]
-for z in range(ns):
-    image[:,:,interleave_order[z], :] = image_tmp[:,::-1, z, :]
-
-
-
-
-print ''
-print '#########################################'
-print 'Saving image in "keyhole.nii.gz"'
+print 'Saving image in "' + sys.argv[2] + '"'
 print '#########################################'
 print ''
 
@@ -155,6 +158,6 @@ affine = np.eye(4)
 dx, dy, dz = 0.250, 0.250, 1.000
 affine[np.eye(4) == 1] = [dx, dy, dz, 1]
 nifti = nib.Nifti1Image(image, affine)
-nib.save(nifti,path + '/../../analysis/keyhole2.nii.gz')
+nib.save(nifti, sys.argv[2])
 
 
