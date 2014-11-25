@@ -71,31 +71,15 @@ def loadfid(path_to_fid):
     elif ebytes == 2:
         dataType = 'h'
 
-    # Get block headers (probably useless...) and data
-    blockHeader = np.empty([nblocks,9])
-    tmpData = np.empty([nblocks,ntraces,nelements], dtype=int)
+    tmpData = np.empty([nblocks, ntraces * nelements], dtype=int)
     data = np.empty([nblocks,ntraces,nelements/2], dtype=complex)
-
-    # It seems data cannot be saved in complex integer format to save
-    # space. Maybe saving 2 arrays would be fine...
-
-    
-
-    #Should be faster, but how?
-    
+    blockFormat = '>' + str((bbytes-bytesPerBlockHeader)/4) + dataType
+    blockStart = np.array(bytesInHeader + np.arange(nblocks) * bbytes) + bytesPerBlockHeader
+    blockEnd = blockStart + bbytes - bytesPerBlockHeader
+    # Remove header and block headers (bottleneck)
     for block in range(nblocks):
-        debutBlock = bytesInHeader + block * bbytes
-        finBlockHeader = debutBlock + bytesPerBlockHeader
-        blockHeader[block,:] = np.array(unpack('>4hl4f',packedData[debutBlock:finBlockHeader]))
-
-        for trace in range(ntraces):
-            debutTrace = finBlockHeader + trace * tbytes 
-            finTrace = debutTrace + tbytes
-            tmpData[block,trace,:] = np.array(unpack('>' + str(nelements) + dataType, packedData[debutTrace:finTrace])).astype(int)
-
-            for p in range(0,nelements,2):
-                data[block,trace,p/2] = np.complex(tmpData[block,trace,p], tmpData[block,trace,p+1])
-
+        tmpData[block,...] = np.array(unpack(blockFormat, packedData[blockStart[block]:blockEnd[block]]))
+    data = (tmpData[:,::2] + tmpData[:,1::2]*1j).reshape(nblocks, ntraces, nelements/2)
 
     print 'Shape of the data:', data.shape
     return data.astype('complex64')
