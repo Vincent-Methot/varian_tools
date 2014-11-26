@@ -192,7 +192,6 @@ def reconstruct_fsems(fid, par):
     ----------  
     fid : numpy array containing data from the fid file (use load_fid)
     par : dictionary containing parameters from procpar file
-          (use load_procpar)
     """
     # TODO
     # Account for interleaving
@@ -222,9 +221,8 @@ def print_procpar(par):
     # to change printed informations.
     valeurs_importantes = ['layout', 'rfcoil', 'operator_', 'date',
     'orient', 'axis', 'gain', 'arraydim', 'acqcycles', 'tr', 'te', 'ti', 
-    'esp', 'etl', 'thk', 'ns', 'pss',  'nv', 'np', 'lpe', 'lro', 'dimX', 'dimY',
-    'dimZ', 'filter', 'acqdim', 'fliplist', 'gcrush', 'gf', 'gf1', 'gpe'
-    , 'mintr', 'minte', 'petable', 'pslabel', 'posX', 'posY', 'posZ',
+    'esp', 'etl', 'thk', 'ns', 'pss',  'nv', 'np', 'lpe', 'lro', 'dimX', 'dimY', 'dimZ', 'filter', 'acqdim', 'fliplist', 'gcrush', 'gf', 'gf1',
+    'gpe' , 'mintr', 'minte', 'petable', 'pslabel', 'posX', 'posY', 'posZ',
     'pss0', 'studyid', 'tpe', 'trise','tn', 'B0', 'resto']
     # Other possible values: 'ap', 'math', 'echo', 'at', 'fn',
     # 'np', 'nv', 'fn1', 'fn', 'time_run', 'time_complete'
@@ -253,7 +251,9 @@ def print_procpar(par):
         else:
             print valeur, ': NA'
     print 'total time:', str(delta_time)
-
+'time_complete',
+       'time_exp', 'time_plotted', 'time_processed', 'time_run',
+       'time_saved', 'time_submitted', 'time_submitted_local',
 def save_nifti(name, data, par):
     """
     Make a nifti header for Varian image coming from the scanner
