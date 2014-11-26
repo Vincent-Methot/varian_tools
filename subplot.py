@@ -13,7 +13,7 @@ def safe_ln(x, minval=0.0000000001):
 clf();
 for i in range(100):
     subplot(10,10,i+1)
-    imshow(safe_ln(abs((modified_kspace[i,6,...]))), 'gray')
+    imshow(safe_ln(abs((kspace[..., 6,i]))), 'gray')
 
 
 
