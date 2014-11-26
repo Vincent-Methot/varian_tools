@@ -255,7 +255,7 @@ def loadfdf(path_to_img):
     return image
 
 
-def niftiheader(name, data, par):
+def save_nifti(name, data, par):
     """
     Make a nifti header for Varian image coming from the scanner
     """
@@ -264,8 +264,8 @@ def niftiheader(name, data, par):
 
     
     affine = np.eye(4)
-    dx = par['lpe'] * 10 / par['nv']
-    dy = par['lro'] * 20 / par['np']
+    dx = par['lpe'] * 10 / data.shape[0]
+    dy = par['lro'] * 10 / data.shape[1]
     dz = par['thk']
     affine[np.eye(4) == 1] = [dx, dy, dz, 1]
     nifti = nib.Nifti1Image(data, affine)
@@ -276,6 +276,86 @@ def keyhole(data, par):
     """
     Reconstruct a 4D image from akeyhole acquisition
     """
+
+    # Get phase encode table from the scan parameters
+    petable = read_petable(par['petable'])
+    # Count number of zero in petable to know number of frame per acquisition
+    frames_per_acq = np.sum(petable == 0)
+    time_frames = frames_per_acq * data.shape[0]
+    kline_per_frame = par['nv'] / frames_per_acq
+    ns = par['ns']
+    
+    print 'Number of slices:', ns
+    print 'Frames per acquisition:', frames_per_acq
+    print 'K-lines per frame:', kline_per_frame
+
+    # Prepare kspace array
+    petable -= petable.min()
+    kspace = np.empty([time_frames, ns, petable.max() + 1,
+                       data.shape[-1]], dtype='complex64')
+    kspace[...] = np.nan
+
+    # Reorganizing kspace using petable.
+    for b in range(par['arraydim']):
+        for f in range(frames_per_acq):
+            for k in range(kline_per_frame):
+                for s in range(ns):
+                    petable_index = k + f*kline_per_frame
+                    time_point = b * frames_per_acq + f
+                    kline = petable[petable_index]
+                    kspace[time_point, s, kline, :] = data[b,
+                                   petable_index*ns + s, :]
+    kspace = kspace.transpose([2,3,1,0])
+    # New data order is (phase-encode, freq encode, slice, time)
+
+    def interp_keyhole(time_serie):
+        """
+        Takes a time serie (numpy array) with nans where data has not been
+        acquired.
+        Array dim: (time point, slice number, phase encode, freq. encode)
+        """
+        # Position points to non-nan elements (which has been acquired)
+        position = -np.isnan(abs(time_serie))
+        # For center of k-space, no keyhole interpolation required
+        if -np.any(np.isnan(time_serie)):
+            return time_serie
+
+        # Interpolation is linear, with numpy function 'interp'
+        time_frames = time_serie.shape[0]
+        k0 = time_serie[position]
+        t0 = np.arange(time_frames)[position]
+        t1 = np.arange(time_serie.shape[0])
+        fr = np.interp(t1, t0, np.real(k0), np.real(k0[0]), np.real(k0[-1]))
+        fi = np.interp(t1, t0, np.imag(k0), np.imag(k0[0]), np.imag(k0[-1]))
+        k1 = fr + fi*1j
+        return k1
+
+    kspace = np.apply_along_axis(interp_keyhole, -1, kspace)
+    return kspace
+
+
+def interleave_reorder(image):
+    """
+    Reorder slices in an interleaved 3d or 4d acquisition
+    """
+    image = np.empty(image_tmp.shape)
+    interleave_order = range(ns)
+    interleave_order = interleave_order[::2] + interleave_order[1::2]
+    for z in range(ns):
+        image[:,:,interleave_order[z], ...] = image_tmp[:,::-1, z, ...]
+    return image
+
+
+def fourier_transform(kspace):
+    """
+    Correct for DC offset and execute the Fourier transform a
+    cartesian raster
+    """
+
+    kspace -= kspace.mean()
+    image = np.abs((np.fft.fft2(kspace, axes=(0,1))))
+    image = np.fft.fftshift(image, axes=(0, 1))
+    return image
 
 
 def read_petable(petable):
@@ -288,5 +368,9 @@ def read_petable(petable):
     return petable
 
 
+def explore_image(image):
+    """
+    Show different slices / time selection of a 2-3-4d dataset
+    """
 
-
+    
