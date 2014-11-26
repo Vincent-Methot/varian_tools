@@ -11,11 +11,18 @@
 Library of tools used to work with data coming from the Varian small
 animal MRI scanner. Functions included are as follow:
 
-    loadfid: Import a 'fid' file into a numpy array
-    parseprocpar: Import a procpar file into a dictionary
-    printprocpar: Print important informations of a procpar
+    load_fid: Import a 'fid' file into a numpy array.
+    load_procpar: Import a procpar file into a dictionary.
+    print_procpar: Print important informations of a procpar.
+    reconstruct_fsems: Reconstruct a fsems image given a fid and a procpar.
+    print_procpar: Display interesting parameters of a procpar file.
+    save_nifti: Save a nifti file fron numpy array using procpar informations.
+    reconstruct_keyhole: Reconstruct a keyhole image using fid and propar.
+    reorder_interleave: Reorder interleaved slices in an image.
+    fourier_transform: Correct for DC offset and run the fourier transform on kspace.
+    read_petable: Return a numpy array from a PETable.
+    explore_image: Shows diverse slices for quality control.
 """
-
 import numpy as np
 import nibabel as nib
 from struct import unpack
@@ -24,14 +31,12 @@ import datetime
 import sys
 import os
 
-
-def loadfid(path_to_fid):
+def load_fid(path_to_fid):
     """
     Take a fid file coming from a Varian NMR imager. Returns a 3D numpy 
     array (1: block number, 2: trace number, 3: element number). All
-    necessary informations for reconstruction are inside de 'procpar'
+    necessary informations for reconstruction are inside the 'procpar'
     file (usually in the same directory as the 'fid' file.
-    
     
     Parameter
     ---------
@@ -84,8 +89,7 @@ def loadfid(path_to_fid):
     print 'Shape of the data:', data.shape
     return data.astype('complex64')
 
-
-def parseprocpar(path_to_procpar):
+def load_procpar(path_to_procpar):
     """
     Read a procpar file and return a dictionary
     
@@ -122,82 +126,9 @@ def parseprocpar(path_to_procpar):
     
     return parameters
 
-
-def construct_fsems(fid, par):
+def load_fdf(path_to_img):
     """
-    Use procpar informations to reorder kspace data contained inside the fid
-
-    Parameters
-    ----------  
-    fid : numpy array containing data from the fid file (use loadfid)
-    par : dictionary containing parameters from procpar file
-          (use parseprocpar)
-    """
-    # TODO
-    # Account for interleaving
-    # Is there a phase-encore table (e.g. keyhole, fsems)
-    # Is it a 3d acquisition (e.g. ge3d)
-    
-    # for fsems
-    fid = fid.squeeze()
-    fid = fid.reshape(par['etl'], par['ns'], par['nv']/par['etl'], par['np']/2)
-    fid = fid.transpose(1,0,2,3)
-    fid = fid.reshape(par['ns'], par['nv'], par['np']/2)
-    petable = read_petable(par['petable'])
-    petable += abs(petable.min())
-
-    kspace = np.empty(fid.shape, dtype=complex)
-    for i in range(par['nv']):
-        kspace[:, petable[i], :] = fid[:, i, :]
-        
-    return kspace
-
-
-def printprocpar(parameters):
-    """
-    Print important parameters in the procpar in the way of a lab-book.
-    """
-    
-    # Values that are going to be printed. Order is print order. Change
-    # to change printed informations.
-    valeurs_importantes = ['layout', 'rfcoil', 'operator_', 'date',
-    'orient', 'axis', 'gain', 'arraydim', 'acqcycles', 'tr', 'te', 'ti', 
-    'esp', 'etl', 'thk', 'ns', 'pss',  'nv', 'np', 'lpe', 'lro', 'dimX', 'dimY',
-    'dimZ', 'filter', 'acqdim', 'fliplist', 'gcrush', 'gf', 'gf1', 'gpe'
-    , 'mintr', 'minte', 'petable', 'pslabel', 'posX', 'posY', 'posZ',
-    'pss0', 'studyid', 'tpe', 'trise','tn', 'B0', 'resto']
-    # Other possible values: 'ap', 'math', 'echo', 'at', 'fn',
-    # 'np', 'nv', 'fn1', 'fn', 'time_run', 'time_complete'
-    time_run = parameters['time_run']
-    time_complete = parameters['time_complete']
-    start_time = datetime.datetime(int(time_run[:4]),
-                                   int(time_run[4:6]),
-                                   int(time_run[6:8]),
-                                   int(time_run[9:11]),
-                                   int(time_run[11:13]),
-                                   int(time_run[13:15]))
-    finish_time = datetime.datetime(int(time_complete[:4]),
-                                    int(time_complete[4:6]),
-                                    int(time_complete[6:8]),
-                                    int(time_complete[9:11]),
-                                    int(time_complete[11:13]),
-                                    int(time_complete[13:15]))
-    delta_time = finish_time - start_time
-
-    print
-    print """Paramètres d'acquisition de""", parameters['seqfil']
-    print '**************************************************'
-    for valeur in valeurs_importantes:
-        if parameters.has_key(valeur):
-            print valeur, ':', parameters[valeur]
-        else:
-            print valeur, ': NA'
-    print 'total time:', str(delta_time)
-
-
-def loadfdf(path_to_img):
-    """
-    Parse every file into a '.img' folder and make it into a numpy array
+    Parse every file from a '.img' folder and transform them into a numpy array
     
     Parameter
     ---------
@@ -206,15 +137,14 @@ def loadfdf(path_to_img):
     Return
     ------
     image: numpy array containing an image
-
-    TODO
-    ----
-    Yet only works for single 2d acquisition
     """
+    
+    # TODO
+    # Yet only works for single 2d acquisition
     
     fdflist = os.listdir(path_to_img)
     try:
-        par = parseprocpar(path_to_img + '/' + fdflist.pop(fdflist.index('procpar')))
+        par = load_procpar(path_to_img + '/' + fdflist.pop(fdflist.index('procpar')))
     except ValueError:
         print 'No procpar found'
         return 0
@@ -254,15 +184,89 @@ def loadfdf(path_to_img):
 
     return image
 
+def reconstruct_fsems(fid, par):
+    """
+    Use procpar informations to reorder kspace data contained inside the fid
+
+    Parameters
+    ----------  
+    fid : numpy array containing data from the fid file (use load_fid)
+    par : dictionary containing parameters from procpar file
+          (use load_procpar)
+    """
+    # TODO
+    # Account for interleaving
+    # Is there a phase-encore table (e.g. keyhole, fsems)
+    # Is it a 3d acquisition (e.g. ge3d)
+    
+    # for fsems
+    fid = fid.squeeze()
+    fid = fid.reshape(par['etl'], par['ns'], par['nv']/par['etl'], par['np']/2)
+    fid = fid.transpose(1,0,2,3)
+    fid = fid.reshape(par['ns'], par['nv'], par['np']/2)
+    petable = read_petable(par['petable'])
+    petable += abs(petable.min())
+
+    kspace = np.empty(fid.shape, dtype=complex)
+    for i in range(par['nv']):
+        kspace[:, petable[i], :] = fid[:, i, :]
+        
+    return kspace
+
+def print_procpar(par):
+    """
+    Print important par in the procpar in the way of a lab-book.
+    """
+    
+    # Values that are going to be printed. Order is print order. Change
+    # to change printed informations.
+    valeurs_importantes = ['layout', 'rfcoil', 'operator_', 'date',
+    'orient', 'axis', 'gain', 'arraydim', 'acqcycles', 'tr', 'te', 'ti', 
+    'esp', 'etl', 'thk', 'ns', 'pss',  'nv', 'np', 'lpe', 'lro', 'dimX', 'dimY',
+    'dimZ', 'filter', 'acqdim', 'fliplist', 'gcrush', 'gf', 'gf1', 'gpe'
+    , 'mintr', 'minte', 'petable', 'pslabel', 'posX', 'posY', 'posZ',
+    'pss0', 'studyid', 'tpe', 'trise','tn', 'B0', 'resto']
+    # Other possible values: 'ap', 'math', 'echo', 'at', 'fn',
+    # 'np', 'nv', 'fn1', 'fn', 'time_run', 'time_complete'
+    time_run = par['time_run']
+    time_complete = par['time_complete']
+    start_time = datetime.datetime(int(time_run[:4]),
+                                   int(time_run[4:6]),
+                                   int(time_run[6:8]),
+                                   int(time_run[9:11]),
+                                   int(time_run[11:13]),
+                                   int(time_run[13:15]))
+    finish_time = datetime.datetime(int(time_complete[:4]),
+                                    int(time_complete[4:6]),
+                                    int(time_complete[6:8]),
+                                    int(time_complete[9:11]),
+                                    int(time_complete[11:13]),
+                                    int(time_complete[13:15]))
+    delta_time = finish_time - start_time
+
+    print
+    print """Paramètres d'acquisition de""", par['seqfil']
+    print '**************************************************'
+    for valeur in valeurs_importantes:
+        if par.has_key(valeur):
+            print valeur, ':', par[valeur]
+        else:
+            print valeur, ': NA'
+    print 'total time:', str(delta_time)
 
 def save_nifti(name, data, par):
     """
     Make a nifti header for Varian image coming from the scanner
+    
+    Parameters
+    ----------
+    name: string containing the name of the file
+    data: numpy array with the image elements
+    par: dictionary containing the procpar parameters
     """
     
     print 'Dimensions:', data.shape
-
-    
+ 
     affine = np.eye(4)
     dx = par['lpe'] * 10 / data.shape[0]
     dy = par['lro'] * 10 / data.shape[1]
@@ -271,10 +275,9 @@ def save_nifti(name, data, par):
     nifti = nib.Nifti1Image(data, affine)
     nib.save(nifti, name)
 
-
-def keyhole(data, par):
+def reconstruct_keyhole(data, par):
     """
-    Reconstruct a 4D image from akeyhole acquisition
+    Reconstruct a 4D image from a keyhole acquisition.
     """
 
     # Get phase encode table from the scan parameters
@@ -333,8 +336,7 @@ def keyhole(data, par):
     kspace = np.apply_along_axis(interp_keyhole, -1, kspace)
     return kspace
 
-
-def interleave_reorder(image):
+def reorder_interleave(image):
     """
     Reorder slices in an interleaved 3d or 4d acquisition
     """
@@ -344,7 +346,6 @@ def interleave_reorder(image):
     for z in range(ns):
         image[:,:,interleave_order[z], ...] = image_tmp[:,::-1, z, ...]
     return image
-
 
 def fourier_transform(kspace):
     """
@@ -357,7 +358,6 @@ def fourier_transform(kspace):
     image = np.fft.fftshift(image, axes=(0, 1))
     return image
 
-
 def read_petable(petable):
     f = open(petable)
     # Discard first line
@@ -367,10 +367,8 @@ def read_petable(petable):
     petable = np.array(petable, dtype=int).ravel()
     return petable
 
-
 def explore_image(image):
     """
     Show different slices / time selection of a 2-3-4d dataset
     """
 
-    
