@@ -265,7 +265,7 @@ def save_nifti(name, data, par):
     par: dictionary containing the procpar parameters
     """
     
-    print 'Dimensions:', data.shape
+    print 'Dimensions du Nifti:', data.shape
  
     affine = np.eye(4)
     dx = par['lpe'] * 10 / data.shape[0]
@@ -340,11 +340,11 @@ def reorder_interleave(image):
     """
     Reorder slices in an interleaved 3d or 4d acquisition
     """
-    image = np.empty(image_tmp.shape)
-    interleave_order = range(ns)
+    image_reorder = np.empty(image.shape)
+    interleave_order = range(image.shape[2])
     interleave_order = interleave_order[::2] + interleave_order[1::2]
-    for z in range(ns):
-        image[:,:,interleave_order[z], ...] = image_tmp[:,::-1, z, ...]
+    for z in range(image.shape[2]):
+        image_reorder[:,:,interleave_order[z], ...] = image[:,::-1, z, ...]
     return image
 
 def fourier_transform(kspace):
