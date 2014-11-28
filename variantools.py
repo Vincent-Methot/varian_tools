@@ -251,9 +251,7 @@ def print_procpar(par):
         else:
             print valeur, ': NA'
     print 'total time:', str(delta_time)
-'time_complete',
-       'time_exp', 'time_plotted', 'time_processed', 'time_run',
-       'time_saved', 'time_submitted', 'time_submitted_local',
+
 def save_nifti(name, data, par):
     """
     Make a nifti header for Varian image coming from the scanner
@@ -345,7 +343,7 @@ def reorder_interleave(image):
     interleave_order = interleave_order[::2] + interleave_order[1::2]
     for z in range(image.shape[2]):
         image_reorder[:,:,interleave_order[z], ...] = image[:,::-1, z, ...]
-    return image
+    return image_reorder
 
 def fourier_transform(kspace):
     """
