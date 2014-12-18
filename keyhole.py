@@ -3,11 +3,17 @@
 
 # Script to reconstruct keyhole data from a fid + procpar files
 
+import sys
 import variantools as vt
-path = '/home/vincent/Maitrise/Data/metv_20141112_002/data/gems_ep04_06.fid'
-fid = vt.load_fid(path + '/fid')
-par = vt.load_procpar(path + '/procpar')
+
+inpath = sys.argv[1]
+outpath = sys.argv[2]
+fid = vt.load_fid(inpath + '/fid')
+par = vt.load_procpar(inpath + '/procpar')
 kspace = vt.reconstruct_keyhole(fid, par)
 image = vt.fourier_transform(kspace)
-image = vt.reorder_interleave(image)
-vt.save_nifti('/home/vincent/Bureau/Resting_state/metv_20141112_002.nii.gz', image, par)
+
+# image = vt.reorder_interleave(image)
+image = image[:, ::-1, :, :]
+
+vt.save_nifti(outpath, image, par)
