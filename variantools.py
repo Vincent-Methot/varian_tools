@@ -132,7 +132,7 @@ def load_fdf(path_to_img):
     
     Parameter
     ---------
-    path_to_img: string indicating a folder with fdf files
+    path_to_img: string indicating a folder with fdf files and a procpar file
     
     Return
     ------
@@ -182,7 +182,7 @@ def load_fdf(path_to_img):
         image[sli-1] = np.array(data).reshape([par['nv'], par['np']/2])
         f.close()
 
-    return image
+    return image.transpose(1,2,0)
 
 def reconstruct_fsems(fid, par):
     """
