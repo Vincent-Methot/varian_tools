@@ -13,4 +13,7 @@ outpath = sys.argv[2]
 data = vt.load_fdf(inpath)
 par = vt.load_procpar(inpath + '/procpar')
 
+data = data.transpose(2,1,0,3)
+
+
 vt.save_nifti(outpath, data, par)

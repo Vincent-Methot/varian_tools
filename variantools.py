@@ -150,7 +150,10 @@ def load_fdf(path_to_img):
         return 0
         
     fdflist = [n for n in fdflist if n.endswith('.fdf')]
-    image = np.empty([par['ns'], par['nv'], par['np']/2])
+    if type(par['tr']) == list:
+    	image = np.empty([par['ns'], par['nv'], par['np']/2, len(par['tr'])])
+    else:
+    	image = np.empty([par['ns'], par['nv'], par['np']/2, 1])
 
     for i in fdflist:
         # Open fdf files one at a time
@@ -161,7 +164,7 @@ def load_fdf(path_to_img):
             header.append(f.readline()[:-1])
             if header[-1] == '\x0c':
                 break
-                
+        
         # Get infos from header
         headerSlice_no = [s for s in header if 'slice_no =' in s][0]
         sli = int(headerSlice_no[headerSlice_no.find('=') + 2: -1])
@@ -172,17 +175,19 @@ def load_fdf(path_to_img):
         pix_per_slice = par['nv'] * par['np'] / 2
         dataSize = pix_per_slice * bits / 8
         precision = dtype + str(bits)
-       
+        array_index = [s for s in header if 'array_index =' in s][0]
+        array_value = int(array_index[array_index.find('=') + 2: -1])
+
         # Read data from file
         f.read()
         f.seek(f.tell() - dataSize)
         debut = f.tell()
         packedData = f.read()
         data = np.array(unpack('>' + str(pix_per_slice) + precision[0], packedData))
-        image[sli-1] = np.array(data).reshape([par['nv'], par['np']/2])
+        image[sli-1,:,:,array_value-1] = np.array(data).reshape([par['nv'], par['np']/2])
         f.close()
 
-    return image.transpose(1,2,0)
+    return image
 
 def reconstruct_fsems(fid, par):
     """
