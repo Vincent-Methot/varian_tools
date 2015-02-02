@@ -51,11 +51,11 @@ def load_fid(path_to_fid):
     bytesPerBlockHeader = 28
     
     # Opening fid file
-    fid = open(path_to_fid,'rb')
+    fid = open(path_to_fid, 'rb')
     packedData = fid.read()
     # There is header at the beginning of the fid file with basic
     # information about data structure
-    header = unpack('>6l2hl',packedData[:bytesInHeader])
+    header = unpack('>6l2hl', packedData[:bytesInHeader])
     # Some of them are useless
     nblocks = header[0]     # number of blocks in file
     ntraces = header[1]     # number of traces per block
