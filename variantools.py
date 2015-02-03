@@ -275,7 +275,7 @@ def save_nifti(name, data, par):
     dy = par['lro'] * 10 / data.shape[1]
     dz = par['thk']
     affine[np.eye(4) == 1] = [dx, dy, dz, 1]
-    nifti = nib.Nifti1Image(data, affine)
+    nifti = nib.Nifti1Image(data.astype('f32'), affine)
     nib.save(nifti, name)
 
 def reconstruct_keyhole(data, par):
