@@ -12,7 +12,14 @@ motion = [m.split() for m in motion]
 motion = np.array(motion, 'float32')
 
 
-for i in range(1, len(motion[0,:])):
-    plt.plot(np.arange(len(motion[:,i])), motion[:,i])
+plt.subplot(2,1,1)
+plt.title('Translation [mm]')
+for i in range(3):
+	plt.plot(motion[:, 0], motion[:, i+1])
+
+plt.subplot(2,1,2)
+plt.title('Rotation [rad]')
+for i in range(3):
+	plt.plot(motion[:, 0], motion[:, i+4])
 
 plt.show()
