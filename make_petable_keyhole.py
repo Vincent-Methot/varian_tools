@@ -7,13 +7,7 @@
 # Make petable for keyhole acquisition                                 #
 ########################################################################
 
-import numpy as np
-# import nibabel as nib
-# from struct import unpack
-# from nmrglue.fileio.varian import read_procpar
-# import datetime
 import sys
-# import os
 
 acquisition_per_frame = int(sys.argv[1])
 time_frames = int(sys.argv[2])
