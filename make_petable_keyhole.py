@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
 ########################################################################
@@ -14,7 +14,7 @@ time_frames = int(sys.argv[2])
 resolution = int(sys.argv[3])
 
 # To acquire 60% of kspace
-half_kspace = False
+half_kspace = True
 
 perange = range(-resolution/2, resolution/2)
 center = resolution / 4
