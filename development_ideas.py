@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
 """Given any kind of sampling of the k-space, time domain, interpolation
@@ -24,6 +24,9 @@ To achieve this goal, many different time scale should be used:
 	-Ultra-short: of the order of millisecond to account for matter properties
 	-Short: of the order of seconds, for example functional signal
 	-Long: comparison between many days (the brain should be the same)
-	-Ultra long: scans months or years apart, the brain may have a different structure
+	-Ultra long: scans months or years apart, the brain may have a different
+	 structure
 """
 
+"""writing a script to search a folder/database that take informations for the
+ procpar files and show only those with a given parameter."""
