@@ -147,9 +147,9 @@ def load_fdf(path_to_img):
         par = load_procpar(path_to_img + '/' + fdflist.pop(fdflist.index('procpar')))
     except ValueError:
         print 'No procpar found'
-        return 0
         
     fdflist = [n for n in fdflist if n.endswith('.fdf')]
+    fdflist = [n for n in fdflist if not(n.startswith('.'))]
     if type(par['tr']) == list:
     	image = np.empty([par['ns'], par['nv'], par['np']/2, len(par['tr'])])
     else:
@@ -187,7 +187,7 @@ def load_fdf(path_to_img):
         image[sli-1,:,:,array_value-1] = np.array(data).reshape([par['nv'], par['np']/2])
         f.close()
 
-    return image
+    return image, par
 
 def reconstruct_fsems(fid, par):
     """
