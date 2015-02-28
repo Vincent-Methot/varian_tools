@@ -1,8 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
 # Script to convert fdf into nifti
-
 
 import sys
 import variantools as vt
