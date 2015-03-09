@@ -17,3 +17,5 @@ image = vt.reorder_interleave(image)
 # image = image[:, ::-1, :, :]
 
 vt.save_nifti(outpath, image, par)
+
+vt.print_procpar(par)

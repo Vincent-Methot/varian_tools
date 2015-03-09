@@ -14,7 +14,7 @@ time_frames = int(sys.argv[2])
 resolution = int(sys.argv[3])
 
 # To acquire 60% of kspace
-half_kspace = True
+half_kspace = False
 
 perange = range(-resolution/2, resolution/2)
 center = resolution / 4
