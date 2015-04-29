@@ -152,6 +152,8 @@ def load_fdf(path_to_img):
     fdflist = [n for n in fdflist if not(n.startswith('.'))]
     if type(par['tr']) == list:
     	image = np.empty([par['ns'], par['nv'], par['np']/2, len(par['tr'])])
+    elif type(par['te']) == list:
+        image = np.empty([par['ns'], par['nv'], par['np']/2, len(par['te'])])
     else:
     	image = np.empty([par['ns'], par['nv'], par['np']/2, 1])
 
@@ -187,7 +189,7 @@ def load_fdf(path_to_img):
         image[sli-1,:,:,array_value-1] = np.array(data).reshape([par['nv'], par['np']/2])
         f.close()
 
-    return image, par
+    return image
 
 def reconstruct_fsems(fid, par):
     """
@@ -226,7 +228,8 @@ def print_procpar(par):
     # to change printed informations.
     valeurs_importantes = ['layout', 'rfcoil', 'operator_', 'date',
     'orient', 'axis', 'gain', 'arraydim', 'acqcycles', 'tr', 'te', 'ti', 
-    'esp', 'etl', 'thk', 'ns', 'pss',  'nv', 'np', 'lpe', 'lro', 'dimX', 'dimY', 'dimZ', 'filter', 'acqdim', 'fliplist', 'gcrush', 'gf', 'gf1',
+    'esp', 'etl', 'thk', 'ns', 'pss', 'nt', 'nv', 'np', 'lpe', 'lro', 'dimX', 'dimY',
+    'dimZ', 'filter', 'acqdim', 'fliplist', 'gcrush', 'gf', 'gf1',
     'gpe' , 'mintr', 'minte', 'petable', 'pslabel', 'posX', 'posY', 'posZ',
     'pss0', 'studyid', 'tpe', 'trise','tn', 'B0', 'resto']
     # Other possible values: 'ap', 'math', 'echo', 'at', 'fn',
@@ -246,6 +249,12 @@ def print_procpar(par):
                                     int(time_complete[11:13]),
                                     int(time_complete[13:15]))
     delta_time = finish_time - start_time
+
+    if delta_time.days < 0:
+        seconds = np.sum(par['tr']) * par['nv']
+        m, s = divmod(seconds, 60)
+        h, m = divmod(m, 60)
+        delta_time = datetime.time(int(h), int(m), int(s))
 
     print
     print """Paramètres d'acquisition de""", par['seqfil']
@@ -271,9 +280,9 @@ def save_nifti(name, data, par):
     print 'Dimensions du Nifti:', data.shape
  
     affine = np.eye(4)
-    dx = par['lpe'] * 10 / data.shape[0]
-    dy = par['lro'] * 10 / data.shape[1]
-    dz = par['thk']
+    dx = par['lpe'] * 10. / data.shape[0]
+    dy = par['lro'] * 10. / data.shape[1]
+    dz = float(par['thk'])
     affine[np.eye(4) == 1] = [dx, dy, dz, 1]
     nifti = nib.Nifti1Image(data.astype('f32'), affine)
     nib.save(nifti, name)
@@ -375,3 +384,10 @@ def explore_image(image):
     Show different slices / time selection of a 2-3-4d dataset
     """
 
+def apply_to_nifti(input, output, function):
+    """
+    Opens a nifti file [input], then apply function point by point and
+    saves it as the nifti file [output].
+    """
+
+    
