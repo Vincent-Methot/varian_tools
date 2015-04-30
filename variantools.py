@@ -30,6 +30,7 @@ from nmrglue.fileio.varian import read_procpar
 import datetime
 import sys
 import os
+from pylab import *
 
 def load_fid(path_to_fid):
     """
@@ -379,10 +380,50 @@ def read_petable(petable):
     petable = np.array(petable, dtype=int).ravel()
     return petable
 
-def explore_image(image):
+def explore_image(image, time_point=0):
     """
     Show different slices / time selection of a 2-3-4d dataset
     """
+    dim = image.shape
+
+    def layout(n):
+        a = b = 0
+        m = n - 1
+        while not(a):
+            m += 1
+            t = int(np.sqrt(m))
+            # test if perfect square
+            if not(m%t):
+                a, b = t, m/t
+            # test if square - 1 is divisor and m is bigger than 25
+            elif m >= 25:
+                if not(m%(t - 1)):
+                    a, b = t - 1, m/(t - 1)
+            # test if square - 2 is divisor and m is bigger than 100
+            elif m >= 100:
+                if not(m%(t - 2)):
+                    a, b = t - 2, m/(t - 2)
+        # print "Number of frames to layout:", n
+        # print "Layout size:", m, '=', a, '*', b
+        return a, b
+
+    if len(dim) == 2:
+        "This is a 2D image"
+        imshow(image, 'gray')
+    if len(dim) == 3:
+        "This is a 3D image"
+        a, b = layout(dim[2])
+        for i in range(dim[2]):
+            subplot(a, b, i+1)
+            imshow(image[..., i], 'gray')
+            title('Slice ' + str(i+1))
+    if len(dim) == 4:
+        "This is a 3D + time image"
+        a, b = layout(dim[2])
+        for i in range(dim[2]):
+            subplot(a, b, i+1)
+            imshow(image[..., i, time_point], 'gray')
+            title('Slice ' + str(i+1))
 
 def apply_to_nifti(input, output, function):
     """
