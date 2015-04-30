@@ -419,6 +419,9 @@ def explore_image(image, time_point=0):
             title('Slice ' + str(i+1))
     if len(dim) == 4:
         "This is a 3D + time image"
+        if time_point > dim[-1]
+            print "Time point is too large, taking first frame"
+            time_point = 0
         a, b = layout(dim[2])
         for i in range(dim[2]):
             subplot(a, b, i+1)
