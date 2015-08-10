@@ -15,7 +15,6 @@ animal MRI scanner. Functions included are as follow:
     load_procpar: Import a procpar file into a dictionary.
     print_procpar: Print important informations of a procpar.
     reconstruct_fsems: Reconstruct a fsems image given a fid and a procpar.
-    print_procpar: Display interesting parameters of a procpar file.
     save_nifti: Save a nifti file fron numpy array using procpar informations.
     reconstruct_keyhole: Reconstruct a keyhole image using fid and propar.
     reorder_interleave: Reorder interleaved slices in an image.
@@ -222,17 +221,23 @@ def reconstruct_fsems(fid, par):
 
 def print_procpar(par):
     """
-    Print important par in the procpar in the way of a lab-book.
+    Returns a string with a formated version of the par file (use load_procpar)
+    in the way of a lab-book.
     """
     
     # Values that are going to be printed. Order is print order. Change
     # to change printed informations.
-    valeurs_importantes = ['layout', 'rfcoil', 'operator_', 'date',
-    'orient', 'axis', 'gain', 'arraydim', 'acqcycles', 'tr', 'te', 'ti', 
-    'esp', 'etl', 'thk', 'ns', 'pss', 'nt', 'nv', 'np', 'lpe', 'lro', 'dimX', 'dimY',
-    'dimZ', 'filter', 'acqdim', 'fliplist', 'gcrush', 'gf', 'gf1',
-    'gpe' , 'mintr', 'minte', 'petable', 'pslabel', 'posX', 'posY', 'posZ',
-    'pss0', 'studyid', 'tpe', 'trise','tn', 'B0', 'resto']
+    short_report = ['te', 'tr', 'arraydim', 'fliplist', 'layout',
+    'axis', 'arraydim', 'esp', 'etl', 'thk', 'ns', 'nt', 'nv', 'np',
+    'acqdim', 'fliplist', 'gain', 'orient', 'petable', 'lpe', 'lro']
+
+    # long_report = ['layout', 'rfcoil', 'operator_', 'date',
+    # 'orient', 'axis', 'gain', 'arraydim', 'acqcycles', 'tr', 'te', 'ti', 
+    # 'esp', 'etl', 'thk', 'ns', 'pss', 'nt', 'nv', 'np', 'lpe', 'lro', 'dimX', 
+    # 'dimY', 'dimZ', 'filter', 'acqdim', 'fliplist', 'gcrush', 'gf', 'gf1',
+    # 'gpe' , 'mintr', 'minte', 'petable', 'pslabel', 'posX', 'posY', 'posZ',
+    # 'pss0', 'studyid', 'tpe', 'trise','tn', 'B0', 'resto']
+
     # Other possible values: 'ap', 'math', 'echo', 'at', 'fn',
     # 'np', 'nv', 'fn1', 'fn', 'time_run', 'time_complete'
     time_run = par['time_run']
@@ -257,15 +262,42 @@ def print_procpar(par):
         h, m = divmod(m, 60)
         delta_time = datetime.time(int(h), int(m), int(s))
 
-    print
-    print """Paramètres d'acquisition de""", par['seqfil']
-    print '**************************************************'
-    for valeur in valeurs_importantes:
-        if par.has_key(valeur):
-            print valeur, ':', par[valeur]
-        else:
-            print valeur, ': NA'
-    print 'total time:', str(delta_time)
+    if par['orient']=='cc' or par['orient']=='cor' or par['orient']=='cor90':
+        orient = 'coronal   '
+    elif par['orient']=='aa':
+        orient = 'axial     '
+    elif par['orient']=='trans':
+        orient = 'transverse'
+    else:
+        orient = par['orient']
+
+    if type(par['tr'])==list:
+        tr = np.array(list(set(par['tr'])))
+        if len(tr)==1:
+            tr = tr[0]
+    else:
+        tr = np.array(par['tr'])
+
+    line1 = """Paramètres d'acquisition de """ + str(par['seqfil']) + ' --- ' + \
+        str(par['operator_']) + ' ' + str(par['date'])
+    line2 = '******************************************************'
+    line3 = str(par['layout']) + '       gain = ' + str(par['gain']) + '       ' + \
+            orient + '       ' + str(par['np']/2) + ' x ' + str(par['nv'])
+    line4 = 'tr =' + str(1e3 * tr) + ' [ms]   te = ' +  \
+            str(round(par['te']*1e3, 2)) + ' [ms]    ' + \
+            str(round(10*par['lro'], 2))  + ' x ' + \
+            str(round(10*par['lpe'], 2)) + ' [mm x mm]'
+    line5 = 'flip = ' + str(par['fliplist'][0]) + '     slices = ' + \
+            str(par['ns']) + '    thickness = ' + str(round(par['thk'], 2)) + ' [mm]'
+    line6 = 'repetitions = ' + str(par['arraydim']) + '           averages =' + \
+            str(par['nt'])
+    line7 = 'petable = ' + str(par['petable']) + '       total time = ' + \
+            str(delta_time)
+
+    report = '\n' + line1 + '\n' + line2 + '\n' + line3 + '\n' + line4 + '\n' + line5 + \
+        '\n' + line6 + '\n' + line7 + '\n'
+    return report
+
 
 def save_nifti(name, data, par):
     """
@@ -419,9 +451,9 @@ def explore_image(image, time_point=0):
             title('Slice ' + str(i+1))
     if len(dim) == 4:
         "This is a 3D + time image"
-        if time_point > dim[-1]
-            print "Time point is too large, taking first frame"
-            time_point = 0
+        # if (time_point >= dim[3]):
+        #     print "Time point is too large, taking first frame"
+        #     time_point = 0
         a, b = layout(dim[2])
         for i in range(dim[2]):
             subplot(a, b, i+1)

@@ -9,4 +9,5 @@ import variantools as vt
 inpath = sys.argv[1]
 
 par = vt.load_procpar(inpath)
-vt.print_procpar(par)
+report = vt.print_procpar(par)
+print report
