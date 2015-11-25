@@ -205,7 +205,6 @@ def reconstruct_fsems(fid, par):
     # Is there a phase-encore table (e.g. keyhole, fsems)
     # Is it a 3d acquisition (e.g. ge3d)
     
-    # for fsems
     fid = fid.squeeze()
     fid = fid.reshape(par['etl'], par['ns'], par['nv']/par['etl'], par['np']/2)
     fid = fid.transpose(1,0,2,3)
@@ -218,6 +217,26 @@ def reconstruct_fsems(fid, par):
         kspace[:, petable[i], :] = fid[:, i, :]
         
     return kspace
+    
+def reconstruct_gems(fid, par):
+    """
+    Use procpar informations to reorder kspace data contained inside the fid
+
+    Parameters
+    ----------  
+    fid : numpy array containing data from the fid file (use load_fid)
+    par : dictionary containing parameters from procpar file
+    """
+    # TODO
+    # Account for interleaving
+    # Is there a phase-encore table (e.g. keyhole, fsems)
+    # Is it a 3d acquisition (e.g. ge3d)
+    
+    fid = fid.squeeze()
+    fid = fid.reshape(par['arraydim'], par['nv'], par['ns'], par['np']/2)
+    fid = fid.transpose(1, 3, 2, 0)
+  
+    return image
 
 def print_procpar(par):
     """
@@ -278,18 +297,25 @@ def print_procpar(par):
     else:
         tr = np.array(par['tr'])
 
+    if type(par['te'])==list:
+        te = np.array(list(set(par['te'])))
+        if len(te)==1:
+            te = te[0]
+    else:
+        te = np.array(par['te'])
+
     line1 = """Paramètres d'acquisition de """ + str(par['seqfil']) + ' --- ' + \
         str(par['operator_']) + ' ' + str(par['date'])
     line2 = '******************************************************'
     line3 = str(par['layout']) + '       gain = ' + str(par['gain']) + '       ' + \
             orient + '       ' + str(par['np']/2) + ' x ' + str(par['nv'])
-    line4 = 'tr =' + str(1e3 * tr) + ' [ms]   te = ' +  \
-            str(round(par['te']*1e3, 2)) + ' [ms]    ' + \
+    line4 = 'tr = ' + str(1e3 * tr) + ' [ms]   te = ' +  \
+            str(1e3 * te) + ' [ms]    ' + \
             str(round(10*par['lro'], 2))  + ' x ' + \
             str(round(10*par['lpe'], 2)) + ' [mm x mm]'
     line5 = 'flip = ' + str(par['fliplist'][0]) + '     slices = ' + \
             str(par['ns']) + '    thickness = ' + str(round(par['thk'], 2)) + ' [mm]'
-    line6 = 'repetitions = ' + str(par['arraydim']) + '           averages =' + \
+    line6 = 'repetitions = ' + str(par['arraydim']) + '           averages = ' + \
             str(par['nt'])
     line7 = 'petable = ' + str(par['petable']) + '       total time = ' + \
             str(delta_time)
@@ -385,7 +411,7 @@ def reorder_interleave(image):
     """
     Reorder slices in an interleaved 3d or 4d acquisition
     """
-    image_reorder = np.empty(image.shape)
+    image_reorder = np.empty_like(image)
     interleave_order = range(image.shape[2])
     interleave_order = interleave_order[::2] + interleave_order[1::2]
     for z in range(image.shape[2]):
@@ -397,11 +423,13 @@ def fourier_transform(kspace):
     Correct for DC offset and execute the Fourier transform a
     cartesian raster
     """
-
+    
     kspace -= kspace.mean()
     image = np.abs((np.fft.fft2(kspace, axes=(0,1))))
     image = np.fft.fftshift(image, axes=(0, 1))
-    return image
+    phase = np.angle((np.fft.fft2(kspace, axes=(0,1))))
+    phase = np.fft.fftshift(phase, axes=(0, 1))
+    return image, phase
 
 def read_petable(petable):
     f = open(petable)

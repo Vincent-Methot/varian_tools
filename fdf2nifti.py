@@ -22,12 +22,14 @@ if par['layout'] == 'gems':
 # fsems
 if par['layout'] == 'fsems':
 	data = data.transpose(2,1,0,3)
-	data = data[::-1,::-1,:,:]
+	data = data[::1,::-1,:,:]
 
 ## With weird aliasing, uncomment
 # test = np.empty_like(data)
+# data = data[::-1, ...]
 # for i in range(4):
-# 	test[i::4, ...] = data[i*64:(i+1)*64, ...]
+#     test[i::4, ...] = data[i*64:(i+1)*64, ...]
+# data = test
 
 
 report = vt.print_procpar(par)

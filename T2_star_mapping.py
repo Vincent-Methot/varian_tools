@@ -5,7 +5,7 @@ import variantools as vt
 import numpy as np
 import nibabel as nib
 
-inpath = '../data/gems_06.fid'
+inpath = '../data/gems_02.fid'
 filename = 'air_medical.nii.gz'
 
 fid = vt.load_fid(inpath +'/fid')

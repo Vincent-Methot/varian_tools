@@ -4,25 +4,27 @@
 from pylab import *
 import sys
 
+def mm2inch(value):
+    return value/25.4
 
 vitals = loadtxt(sys.argv[1], delimiter=',')
+ideal = np.loadtxt(sys.argv[2])
 resp = vitals[:,1]
 # plot(resp)
 min_resp = resp.min()
 max_resp = resp.max()
 
-duration = 2 * 60
-stim_ON = 60 * arange(4, 60, 10)
+duration = 5 * 60
+stim_ON = 60 * arange(5, 60, 10)
 stim_OFF = stim_ON + duration
 
-for i in stim_ON:
-	plot((i, i), (min_resp, max_resp), 'k-')
-for i in stim_OFF:
-	plot((i, i), (min_resp, max_resp), 'r-')
+figure(figsize=(mm2inch(150), mm2inch(100)))
 
-title('Respiration rate')
-xlabel('time [sec]')
-ylabel('Respiration rat [1/min]')
+# plot((debut, i), (position, position), color='red', linewidth=2)
+
+# title('Respiration rate')
+xlabel('temps [sec]')
+ylabel(u'Fréquence respiratoire [1/min]')
 
 def smooth(signal, length):
 	smooth = zeros(signal.shape)
@@ -41,9 +43,20 @@ smooth_resp = smooth(resp, 60)
 t = arange(0, len(resp))
 f = interp1d(t, resp, kind='linear')
 tnew = arange(0,len(resp),len(resp)/70)[:70]
-plot(t,resp,'.')
+# plot(t,resp,'.')
 # plot(tnew,f(tnew),'-')
-plot(smooth_resp)
+plot(smooth_resp, 'k')
+
+time_scale = len(smooth_resp) / 140.
+position_bars = smooth_resp.mean() - 2 * smooth_resp.std()
+
+stim = ideal[1:141] - ideal[:140]
+for i in range(len(stim)):
+	if (stim[i] >= 0.5):
+		debut = i
+	if (stim[i] <= -0.5) or i == (len(stim) - 1) :
+		plot((time_scale*debut, time_scale*i), (position_bars, position_bars), color='red', linewidth=2)
+
 axis('tight')
 # legend(['data', 'linear', 'cubic'], loc='best')
 show()
