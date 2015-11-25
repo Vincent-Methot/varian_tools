@@ -1,0 +1,1 @@
+Make fdf2nifti.py compatible with scout images (3-planes)
